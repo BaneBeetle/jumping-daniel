@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en" data-type="product" data-radius="soft" data-ground="sand" data-buttons="block" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jumping Daniel: a student-built quadruped robot that walks</title>
+<meta name="description" content="Brian Phan's four-legged robot for MECE 4611 Robotics Studio: footage of its untethered trot, then the parts, the logged numbers, the CAD and the control code.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Jumping Daniel: a student-built quadruped robot that walks">
+<meta property="og:description" content="Footage of JD's untethered trot, its parts, its logged numbers, the CAD and how the Pi drives eight bus servos.">
+<meta property="og:image" content="share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#dedad3">
+<!-- <link rel="canonical" href="https://banebeetle.github.io/jumping-daniel/"> -->
+<meta name="site-kind" content="tech">
+<meta name="page-type" content="product">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=SUSE:wght@400..700&family=JetBrains+Mono:wght@400..500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/system.css">
+<link rel="stylesheet" href="assets/ui/cards.css">
+<link rel="stylesheet" href="assets/motion/motion.css">
+<link rel="stylesheet" href="assets/backgrounds/backgrounds.css">
+<link rel="stylesheet" href="assets/layout/layout.css">
+<link rel="stylesheet" href="assets/icons/icon.css">
+<style>
+:root {
+  --p-bg: #dedad3; --p-surface: #d3cec6; --p-ink: #0a0a0a; --p-muted: #55514c;
+  --p-accent: #256f82; --p-accent-ink: #ffffff; --p-action: #256f82; --p-action-ink: #ffffff;
+  --p-inv-bg: #0a0a0a; --p-inv-surface: #151515; --p-inv-ink: #dedad3; --p-inv-muted: #84827e;
+  --p-inv-accent: #256f82; --p-inv-accent-ink: #ffffff; --p-inv-action: #256f82; --p-inv-action-ink: #ffffff;
+  --font-display: "SUSE", system-ui, sans-serif;
+  --font-text: "SUSE", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --display-weight: 500;
+  --display-tracking: -0.03em;
+  --display-tracking-xl: -0.04em;
+}
+</style>
+<link rel="stylesheet" href="assets/diagrams/diagram.css">
+<script>document.documentElement.classList.add('m-enter');setTimeout(()=>document.documentElement.classList.add('m-enter-done'),700)</script>
+<script src="assets/backgrounds/backgrounds.js"></script>
+<script>document.documentElement.classList.add('mo-js');setTimeout(()=>document.documentElement.classList.add('mo-safe'),2500)</script>
+<link rel="modulepreload" href="assets/moments/moments.js">
+<link rel="modulepreload" href="assets/moments/lib.js">
+<link rel="modulepreload" href="assets/moments/letters-assemble/moment.js">
+<!-- page CSS: only what sits inside a visual, one --p-h per card group, and the browser's own surfaces -->
+<style>
+  ::selection { background: var(--p-accent); color: var(--p-accent-ink); }
+  html { scrollbar-color: color-mix(in oklab, var(--p-ink) 35%, transparent) var(--p-bg); caret-color: var(--p-accent); }
+  /* the hero film: the overhead clip, cropped round the robot */
+  .hero-visual > video.frame__img { object-position: 50% 22%; background: var(--p-surface); }
+  @media (max-width: 1023px) { .hero-visual > video.frame__img { object-position: 50% 14%; } }
+  /* the walks: a wide clip from the floor and a tall one from above, one height, tops and feet level */
+  #walks .clip { height: 480px; }
+  #walks .clip > video.frame__img { background: var(--p-surface); }
+  #walks .clip--top > video.frame__img { object-position: 50% 18%; }
+  #walks .clip--floor > video.frame__img { object-position: 30% 50%; }
+  @media (min-width: 640px) and (max-width: 1023px) { #walks .clip { height: 520px; } #walks .clip--floor { grid-column: 1 / span 8; } #walks .clip--top { grid-column: 9 / -1; } }
+  @media (max-width: 639px) { #walks .clip--floor { height: 160px; } #walks .clip--top { height: 236px; } #walks .clip--top > video.frame__img { object-position: 50% 12%; } }
+  /* the statement's line is read, so it takes the ink */
+  #untethered .mo-la__sub { color: var(--ink); }
+  @media (min-width: 1024px) and (max-width: 1279px) { #untethered .mo-la__type { font-size: 156px; } }
+  @media (max-width: 1023px) { #untethered .mo-la__type { font-size: clamp(80px, 21vw, 180px); } }
+  #untethered .mo-la__link { margin: var(--s-5) 0 0; }
+  @media (max-width: 639px) { #untethered .mo-la__type { line-height: 1.08; } #untethered .mo-la__sub { font-size: 20px; line-height: 30px; } }
+  /* the parts: four tall close-ups from line to line, one 5:8 ratio, plain photographs (no frames) */
+  #build .strip > img { display: block; width: 100%; height: auto; aspect-ratio: 2 / 3; object-fit: cover; border-radius: var(--r-lg); }
+  @media (min-width: 640px) and (max-width: 1023px) { #build .strip > img { grid-column: auto / span 6; aspect-ratio: 3 / 2; } }
+  @media (max-width: 639px) { #build .strip > img { grid-column: auto / span 6; aspect-ratio: 1; } }
+  /* the run: the figure set large and the spec rows beside the photograph at the tape's end, on a deeper step of the accent */
+  #numbers.ground-brand { --bg: color-mix(in oklab, var(--p-accent) 74%, black); background: var(--bg); }
+  #numbers .frame { --ratio: 75%; }
+  #numbers picture.frame__img > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  @media (min-width: 640px) and (max-width: 1023px) { #numbers .wrap > .span-5 { grid-column: 1 / span 7; } #numbers .wrap > .frame { grid-column: 8 / -1; align-self: start; --ratio: 175%; } }
+  @media (max-width: 639px) { #numbers .wrap > .frame { align-self: stretch; height: 100%; } }
+  #numbers .run-figure { margin: 0 0 var(--s-5); display: grid; gap: var(--s-1); }
+  #numbers .run-figure dd { margin: 0; }
+  #numbers .run-link { margin: var(--s-5) 0 0; }
+  #numbers .run-figure dt { font-size: var(--t-label); font-weight: 500; color: var(--muted); }
+  /* the CAD: renders on their own white ground, each marked as CAD */
+  #cad .frame { --ratio: 75%; background: #fff; }
+  @media (min-width: 640px) and (max-width: 1023px) { #cad .grid > .frame { grid-column: auto / span 6; --ratio: 140%; } }
+  @media (max-width: 639px) { #cad .frame { --ratio: 64%; } }
+  #cad .frame > .frame__img { object-fit: contain; background: #fff; }
+  #cad .frame > .cad-tag { position: absolute; z-index: 1; left: var(--s-4); top: var(--s-4); padding: 2px 8px; border-radius: var(--r-sm); background: var(--p-bg); color: var(--p-ink); font-size: var(--t-label); font-weight: 500; line-height: 20px; }
+  /* the code: three panels, one height; the charts are drawn from the robot's logs */
+  #code .panel { --p-h: 360px; }
+  @media (min-width: 1024px) and (max-width: 1279px) { #code .grid > .card.span-4 { grid-column: auto / span 4; } #code .panel { --p-h: 280px; } }
+  @media (min-width: 640px) and (max-width: 1023px) { #code { --h: 2; } #code .panel { --p-h: calc((200svh - 900px) / 3); } }
+  @media (max-width: 639px) { #code .panel { --p-h: 260px; } }
+  .chart { position: absolute; inset: var(--s-5); display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-4) var(--s-5) var(--s-3) var(--s-3); border-radius: var(--r-md); background: #fbfaf7; border: 1px solid var(--line); }
+  .chart .ch-key { padding-left: var(--s-2); }
+  .ch { position: relative; flex: 1 1 auto; min-height: 0; display: grid; grid-template-columns: 36px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 20px; column-gap: var(--s-2); }
+  .ch-y, .ch-x, .ch-plot { position: relative; min-width: 0; }
+  .ch-y { grid-column: 1; grid-row: 1; }
+  .ch-plot { grid-column: 2; grid-row: 1; }
+  .ch-x { grid-column: 2; grid-row: 2; }
+  .ch-plot > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .ch-y > span, .ch-x > span { position: absolute; font-size: var(--t-label); line-height: 16px; color: var(--p-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ch-y > span { right: 0; transform: translateY(-50%); }
+  .ch-x > span { bottom: 0; transform: translateX(-50%); }
+  .ch-x > span.is-first { transform: none; }
+  .ch-grid { stroke: color-mix(in oklab, var(--p-ink) 14%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .ch-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+  .ch-line--thin { stroke-width: 1.5; }
+  .ch-line--a { stroke: #00829f; }
+  .ch-line--b { stroke: #b4561c; }
+  .ch-limit { stroke: var(--p-ink); stroke-width: 1; stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+  .ch-note { position: absolute; transform: translateY(calc(-100% - 6px)); font-size: var(--t-label); font-weight: 500; line-height: 16px; color: var(--p-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ch-note--end { transform: translate(calc(-100% - 12px), 8px); }
+  .ch-trip { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #b4561c; box-shadow: 0 0 0 2px var(--p-bg); }
+  .ch-cross { stroke: color-mix(in oklab, var(--p-ink) 45%, transparent); stroke-width: 1; vector-effect: non-scaling-stroke; opacity: 0; }
+  .chart.is-hover .ch-cross { opacity: 1; }
+  .ch-key { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); margin: 0; padding: 0; list-style: none; font-size: var(--t-label); font-weight: 500; color: var(--p-ink); }
+  .ch-key li { display: inline-flex; align-items: center; gap: var(--s-2); }
+  .ch-key i { width: 16px; height: 3px; border-radius: 2px; }
+  .ch-key .a i { background: #00829f; } .ch-key .b i { background: #b4561c; }
+  .ch-tip { position: absolute; z-index: 2; top: 0; pointer-events: none; padding: 6px 10px; border-radius: var(--r-sm); background: var(--p-ink); color: var(--p-bg); font-size: var(--t-label); font-weight: 500; line-height: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; opacity: 0; transition: opacity 120ms ease-out; }
+  .chart.is-hover .ch-tip { opacity: 1; }
+  /* the shutdown log: the 17:31 run's steps with their times, on a sheet in the panel */
+  .shut-log { position: absolute; left: var(--s-5); right: var(--s-5); top: var(--s-6); padding: var(--s-4) var(--s-5) var(--s-3); border-radius: var(--r-md); background: #fbfaf7; border: 1px solid var(--line); }
+  .shut-log__head { display: flex; justify-content: space-between; gap: var(--s-3); padding-bottom: var(--s-3); border-bottom: 1px solid var(--line); font-size: var(--t-label); font-weight: 500; color: var(--p-muted); }
+  .shut-log__head code { font: 500 var(--t-label)/1.3 var(--font-mono); color: var(--p-ink); }
+  .shut-log__list { margin: 0; padding: 0; list-style: none; }
+  .shut-log__list li { display: flex; justify-content: space-between; gap: var(--s-3); padding: 10px 0; font-size: var(--t-small); line-height: 20px; color: var(--p-ink); border-bottom: 1px solid var(--line); }
+  .shut-log__list li:last-child { border-bottom: 0; }
+  .shut-log__list li > span:last-child { font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--p-muted); }
+  .shut-log__list li:last-child > span:first-child { font-weight: 500; }
+  @media (max-width: 1279px) { .shut-log { left: var(--s-4); right: var(--s-4); padding: var(--s-3) var(--s-4) var(--s-2); } .shut-log__list li { font-size: var(--t-label); line-height: 18px; padding: 6px 0; } }
+  /* the close: the name set from line to line, its size from the wrap's width */
+  .close--word .close__word { font-size: calc(min(100vw - 2 * var(--gut), 1280px) * 0.16); line-height: 1.08; }
+  /* the wiring: one diagram across the wrap */
+  #wiring .panel { --p-h: 0px; padding: var(--s-4); }
+</style>
+</head>
+<body>
+<!-- type: product (hardware, site-kind tech; kind tech): a student-built quadruped robot
+     deal: hero split (dealt product; re-dealt because the lead film is a portrait clip, see the report), nav nav-mega,
+     close close-word, footer footer-columns, rhythm brand-band, buttons block, mark dots, ground sand,
+     palette putty-black-teal, type suse; compositions: build strip, cad pair
+     effect: the hero film (muted, looped, with controls); moments: letters-assemble in #untethered -->
+
+<header class="nav">
+  <div class="wrap nav__bar">
+    <a class="skip-link" href="#top">Skip to content</a>
+    <a class="nav__logo" href="#top"><span class="mark" data-mark="dots" aria-hidden="true"></span>Jumping Daniel</a>
+    <nav class="nav__links" aria-label="Main">
+      <div class="nav__item"><a class="nav__link" href="#walks">Trot</a></div>
+      <div class="nav__item"><a class="nav__link" href="#build">Parts</a></div>
+      <div class="nav__item"><a class="nav__link" href="#numbers">Numbers</a></div>
+      <div class="nav__item"><a class="nav__link" href="#cad">CAD</a></div>
+      <div class="nav__item">
+        <a class="nav__link" href="#code">Code <svg class="chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <div class="nav__menu">
+          <div class="wrap grid">
+            <div class="menu-col span-3">
+              <p class="t-label">Walking code</p>
+              <a href="#trot">Trot gait<span>Diagonal legs lift together</span></a>
+              <a href="#watchdog">Watchdog<span>Stops on a bad reading</span></a>
+              <a href="#shutdown">Shutdown<span>Parks, goes limp, powers off</span></a>
+            </div>
+            <div class="menu-col span-3">
+              <p class="t-label">Hardware</p>
+              <a href="#wiring">How it is wired<span>Batteries, Pi, bus board, servos</span></a>
+              <a href="#numbers">Run log<span>The 19:10 run in numbers</span></a>
+            </div>
+            <a class="menu-card span-3 start-10" href="#untethered">
+              <div class="panel"><img class="frame__img" src="media/build-pi.jpg" alt="The Raspberry Pi 4B with the USB power bank strapped beside it" loading="lazy" width="640" height="1024" data-source="client" data-subject="JD's Raspberry Pi and power bank"></div>
+              <span class="t-card">Walks without a cable</span>
+              <span class="t-small muted">The Pi rides on a power bank</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <div class="nav__actions">
+      <a class="btn btn--primary" href="#film">Watch JD walk</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero hero--split" data-enter aria-labelledby="hero-h">
+    <div class="wrap">
+      <div class="hero-text grid hero-split">
+        <div class="hero-copy span-5">
+          <h1 id="hero-h">Jumping Daniel, a four-legged walking robot</h1>
+          <p class="t-lead">Designed, 3D-printed, wired and programmed by one student. On 11 November 2026 it trotted 22.9&nbsp;cm in 27.92&nbsp;s with no cable, its Pi riding on a power bank.</p>
+          <div class="btn-row">
+            <a class="btn btn--primary" href="#film">Watch JD walk<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+            <a class="btn btn--secondary" href="#build">See the build</a>
+          </div>
+          <dl class="hero-facts">
+            <div><dt>Built by</dt><dd>Brian Phan</dd></div>
+            <div><dt>Course</dt><dd>MECE 4611</dd></div>
+            <div><dt>Team</dt><dd>Group 43</dd></div>
+          </dl>
+        </div>
+        <!-- CLIENT FILE film: media/jd-untethered.mp4 (640x996, H.264, the untethered trot of 11 Nov 2026, 19:10, from above) and media/jd-untethered.jpg (its poster) -->
+        <div class="hero-visual frame frame--photo span-6 start-7" id="film">
+          <video class="frame__img" src="media/jd-untethered.mp4" poster="media/jd-untethered.jpg" autoplay muted loop playsinline controls preload="auto" aria-label="JD trotting forward untethered beside a tape measure, filmed from above" data-source="client" data-subject="JD's untethered trot"></video>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="walks" aria-labelledby="walks-h">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="walks-h">Two views of the robot's measured trot</h2>
+        <p>At 17:22, still on a cable, JD trotted four cycles beside a tape measure. Diagonal legs swing together: front left with rear right, then front right with rear left.</p>
+      </div>
+      <div class="grid">
+        <!-- CLIENT FILE film: media/jd-trot-floor.mp4 (1280x576, the 17:22 trot from floor level) -->
+        <div class="frame frame--photo clip clip--floor span-8">
+          <video class="frame__img" src="media/jd-trot-floor.mp4" poster="media/jd-trot-floor.jpg" muted playsinline controls preload="none" aria-label="JD trotting across a wood floor, filmed from floor level" data-source="client" data-subject="JD's tethered trot from the floor"></video>
+        </div>
+        <!-- CLIENT FILE film: media/jd-trot-top.mp4 (720x1120, the 17:22 trot from above beside the tape) -->
+        <div class="frame frame--photo clip clip--top span-4">
+          <video class="frame__img" src="media/jd-trot-top.mp4" poster="media/jd-trot-top.jpg" muted playsinline controls preload="none" aria-label="JD trotting beside a tape measure, filmed from above" data-source="client" data-subject="JD's tethered trot from above"></video>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="untethered" data-moment="letters-assemble" aria-labelledby="untethered-h">
+    <div class="wrap">
+      <h2 class="mo-la__type" id="untethered-h">It walks without a cable</h2>
+      <p class="mo-la__sub">For the 19:10 run the Raspberry Pi ran on a 5&nbsp;V USB power bank riding on the robot, and the eight servos on a 3S 2200&nbsp;mAh LiPo zip-tied under the chassis.</p>
+      <p class="mo-la__link"><a class="link" href="#film">See the 19:10 run on video</a></p>
+    </div>
+  </section>
+
+  <section class="section" id="build" aria-labelledby="build-h">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="build-h">Printed robot parts</h2>
+        <p>Body, legs and head are 3D-printed. Each leg has a hip that turns and a knee that lifts, both Hiwonder HTD-35H servos, and the BusLinker V2.5 board sits in its own printed holder.</p>
+      </div>
+      <div class="grid strip">
+        <img class="span-3" src="media/build-inside.jpg" srcset="media/build-inside-320.jpg 320w, media/build-inside.jpg 640w" sizes="(max-width: 639px) 165px, (max-width: 1023px) 324px, 302px" alt="JD from above with the shell off: the Raspberry Pi and the BusLinker board in the middle, a hip and knee servo on each of the four legs" loading="lazy" width="640" height="1024" data-source="client" data-subject="JD's chassis from above">
+        <img class="span-3" src="media/build-pi.jpg" srcset="media/build-pi-320.jpg 320w, media/build-pi.jpg 640w" sizes="(max-width: 639px) 165px, (max-width: 1023px) 324px, 302px" alt="The Raspberry Pi 4B with the USB power bank strapped beside it" loading="lazy" width="640" height="1024" data-source="client" data-subject="JD's Raspberry Pi and power bank">
+        <img class="span-3" src="media/build-buslinker.jpg" srcset="media/build-buslinker-320.jpg 320w, media/build-buslinker.jpg 640w" sizes="(max-width: 639px) 165px, (max-width: 1023px) 324px, 302px" alt="The BusLinker V2.5 board in its printed holder, the red battery lead in its screw terminal" loading="lazy" width="640" height="1024" data-source="client" data-subject="JD's BusLinker board">
+        <img class="span-3" src="media/build-leg.jpg" srcset="media/build-leg-320.jpg 320w, media/build-leg.jpg 640w" sizes="(max-width: 639px) 165px, (max-width: 1023px) 324px, 302px" alt="JD's white printed shell and two legs, each with its hip and knee servos" loading="lazy" width="640" height="1024" data-source="client" data-subject="JD's shell and legs">
+      </div>
+    </div>
+  </section>
+
+  <section class="section ground-brand g2m" id="numbers" aria-labelledby="numbers-h">
+    <div class="wrap grid">
+        <div class="span-5">
+          <div class="section-head">
+            <h2 id="numbers-h">The 19:10 run in numbers</h2>
+            <p>From the tape and JD's own log; the tethered 17:22 run matched it.</p>
+          </div>
+          <dl class="run-figure">
+            <dt>Average speed</dt>
+            <dd class="t-stat">0.82 cm/s</dd>
+          </dl>
+          <ul class="rows rows--spec">
+            <li><span class="rows__name">Steady speed, roughly</span><span class="rows__value">0.98 cm/s</span></li>
+            <li><span class="rows__name">One trot cycle</span><span class="rows__value">4.65 s</span></li>
+            <li><span class="rows__name">Joint speed cap</span><span class="rows__value">30°/s</span></li>
+            <li><span class="rows__name">Lowest battery</span><span class="rows__value">11.90 V</span></li>
+            <li><span class="rows__name">Hottest servo</span><span class="rows__value">50 °C</span></li>
+            <li><span class="rows__name">Missed servo replies</span><span class="rows__value">none</span></li>
+          </ul>
+          <p class="run-link"><a class="link" href="#film">See the 19:10 run on video</a></p>
+        </div>
+        <div class="frame frame--photo frame--split span-6 start-7"><picture class="frame__img"><source media="(max-width: 1023px)" srcset="media/run-end-tape-phone.jpg" width="640" height="1120"><img src="media/run-end-tape.jpg" alt="JD's rear foot beside the tape measure at about 9 inches, where the untethered run ended" loading="lazy" width="1200" height="900" data-source="client" data-subject="the end of JD's untethered run on the tape"></picture></div>
+    </div>
+  </section>
+
+  <section class="section" id="cad" aria-labelledby="cad-h">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="cad-h">The robot's CAD model</h2>
+        <p>439.5&nbsp;×&nbsp;397.9&nbsp;×&nbsp;259.4&nbsp;mm and 2175&nbsp;g by the model's own mass count; the real robot has not been weighed.</p>
+      </div>
+      <div class="grid">
+        <div class="frame span-6"><span class="cad-tag">CAD</span><img class="frame__img" src="media/cad-three-quarter.jpg" srcset="media/cad-three-quarter-720.jpg 720w, media/cad-three-quarter.jpg 1360w" sizes="(max-width: 639px) 342px, (max-width: 1023px) 324px, 628px" alt="CAD render of JD from the front left, legs out on their diagonals" loading="lazy" width="1360" height="1020" data-source="client" data-subject="JD's CAD model, three-quarter view"></div>
+        <div class="frame span-6"><span class="cad-tag">CAD</span><img class="frame__img" src="media/cad-top.jpg" srcset="media/cad-top-720.jpg 720w, media/cad-top.jpg 1360w" sizes="(max-width: 639px) 342px, (max-width: 1023px) 324px, 628px" alt="CAD render of JD from above, its four legs in an X" loading="lazy" width="1360" height="1020" data-source="client" data-subject="JD's CAD model from above"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="wiring" aria-labelledby="wiring-h">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="wiring-h">How the robot is wired</h2>
+        <p>robot.py and gait.py run on the Raspberry Pi and send each joint its next angle through the BusLinker V2.5, which talks to all eight servos on one serial bus.</p>
+      </div>
+      <div class="panel">
+        <div class="dg" data-diagram><script type="application/json">{"layout":"free","size":[1280,420],"sizeCompact":[1,1],"alt":"A USB power bank feeds the Raspberry Pi 4B, which runs robot.py and gait.py and sends each joint's angle to the BusLinker V2.5. A 3S LiPo powers the BusLinker, which drives two servos in each of the four legs.","nodes":[{"id":"bank","label":"USB power bank","icon":"ui:battery-charging","meta":"5 V","at":[0.12,0.24],"atCompact":[0.26,0.08]},{"id":"pi","label":"Raspberry Pi 4B","icon":"raspberry-pi","meta":"robot.py, gait.py","at":[0.12,0.72],"atCompact":[0.26,0.34]},{"id":"lipo","label":"3S LiPo","icon":"ui:battery-full","meta":"2200 mAh","at":[0.46,0.24],"atCompact":[0.74,0.08]},{"id":"bus","label":"BusLinker V2.5","icon":"ui:circuit-board","at":[0.46,0.72],"atCompact":[0.74,0.34]},{"id":"fl","label":"Front left","icon":"ui:cog","meta":"servos 1, 2","at":[0.85,0.12],"atCompact":[0.26,0.64],"done":true},{"id":"fr","label":"Front right","icon":"ui:cog","meta":"servos 3, 4","at":[0.85,0.38],"atCompact":[0.74,0.64],"done":true},{"id":"rl","label":"Rear left","icon":"ui:cog","meta":"servos 5, 6","at":[0.85,0.64],"atCompact":[0.26,0.9],"done":true},{"id":"rr","label":"Rear right","icon":"ui:cog","meta":"servos 7, 8","at":[0.85,0.9],"atCompact":[0.74,0.9],"done":true}],"edges":[{"from":"bank","to":"pi"},{"from":"pi","to":"bus"},{"from":"lipo","to":"bus"},{"from":"bus","to":"fl","curve":"elbow"},{"from":"bus","to":"fr","curve":"elbow"},{"from":"bus","to":"rl","curve":"elbow"},{"from":"bus","to":"rr","curve":"elbow"}]}</script></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="code" aria-labelledby="code-h" style="--hm: 2">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="code-h">What the robot's walking code does</h2>
+        <p>The trot walks today. The creep, one leg at a time, can't yet lift two of its feet on the floor: the robot rests on one diagonal. <a class="link" href="#wiring">See the wiring</a></p>
+      </div>
+      <div class="grid">
+        <article class="card card--row card--open span-4 m-nolift" id="trot">
+          <h3>Lifts its legs in 2 diagonal pairs</h3>
+          <p>Knee angles from the 19:10 log: front left with rear right, then front right with rear left.</p>
+          <div class="panel">
+            <div class="chart" data-chart-host>
+              <ul class="ch-key"><li class="a"><i></i>Front left + rear right</li><li class="b"><i></i>Front right + rear left</li></ul>
+              <!--CHART:trot--><div class="ch" role="img" aria-label="Measured knee angles over the 27.9 s untethered trot: the front-left and rear-right knees lift together, then the front-right and rear-left, five times each." data-chart='{"span":27.919999999999998,"unit":"°","names":["Front left + rear right","Front right + rear left"],"pts":[[0,21.1,20.2],[0.25,21.1,20.2],[0.5,21.4,20.2],[0.75,21.1,20.2],[1,21.7,20.3],[1.25,22.9,20.2],[1.5,23.8,20.2],[1.75,23.6,20.2],[2,23.2,20.3],[2.25,21.8,20.3],[2.5,21.6,20.3],[2.75,21.5,20.9],[3,21.6,24.6],[3.25,21.5,29],[3.5,21.7,36.1],[3.75,21.7,35.4],[4,21.6,30.4],[4.25,21.7,25.1],[4.5,21.7,21],[4.75,21.6,20.3],[5,22.6,20.3],[5.25,27.8,20.3],[5.5,33.5,20.4],[5.75,38.2,20.6],[6,39.5,20.6],[6.25,36.6,20.5],[6.5,31.3,20.5],[6.75,25.7,20.3],[7,22.4,20.2],[7.25,22.1,20.5],[7.5,21.7,23],[7.75,21.7,28],[8,21.7,36.4],[8.25,21.7,39],[8.5,21.7,36.2],[8.75,21.7,30.4],[9,21.5,23.3],[9.25,21.4,20.5],[9.5,21.8,20.3],[9.75,23.5,20.4],[10,28.8,20.4],[10.25,34.3,20.5],[10.5,39.7,20.5],[10.75,39.4,20.6],[11,33.6,20.6],[11.25,30.6,20.6],[11.5,24.2,20.4],[11.75,22.1,20.2],[12,21.8,21.1],[12.25,21.7,25.1],[12.5,21.6,31.4],[12.75,21.7,36.2],[13,21.7,37.2],[13.25,21.6,34.8],[13.5,21.8,28.9],[13.75,21.7,21.8],[14,21.5,20.3],[14.25,22.2,20.3],[14.5,25.9,20.3],[14.75,32,20.4],[15,37.2,20.4],[15.25,39,20.4],[15.5,37.3,20.4],[15.75,32.3,20.2],[16,27.8,20.4],[16.25,22.7,20.2],[16.5,22.1,20.4],[16.75,21.6,23.3],[17,21.8,29.3],[17.25,21.8,35.3],[17.5,21.6,39.1],[17.75,21.6,37.2],[18,21.7,32.2],[18.25,21.7,26],[18.5,21.7,21.4],[18.75,21.6,20.3],[19,23,20.3],[19.25,28.2,20.3],[19.5,35.3,20.3],[19.75,38.9,20.4],[20,39.1,20.6],[20.25,35,20.6],[20.5,29.8,20.5],[20.75,24.5,20.4],[21,22.1,20.3],[21.25,21.8,20.9],[21.5,21.5,24],[21.75,21.7,29.8],[22,21.7,37.8],[22.25,21.6,38.8],[22.5,21.7,34.9],[22.75,21.7,28.7],[23,21.7,23.2],[23.25,21.6,20.3],[23.5,21.8,20.3],[23.75,24.7,20.3],[24,29.9,20.4],[24.25,34.6,20.5],[24.5,37,20.6],[24.75,36,20.5],[25,30.1,20.6],[25.25,27.6,20.4],[25.5,22.2,20.3],[25.75,22,20.3],[26,21.8,20.5],[26.25,21.7,21.8],[26.5,21.7,24.1],[26.75,21.6,23.9],[27,21.5,23.3],[27.25,21.6,21.6],[27.5,21.6,20.3],[27.75,21.5,20.3]]}'><div class="ch-y" aria-hidden="true"><span style="top:88.46%">20°</span><span style="top:50%">30°</span><span style="top:11.54%">40°</span></div><div class="ch-plot"><svg viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true"><line class="ch-grid" x1="0" x2="1000" y1="884.6" y2="884.6"/><line class="ch-grid" x1="0" x2="1000" y1="500.0" y2="500.0"/><line class="ch-grid" x1="0" x2="1000" y1="115.4" y2="115.4"/><path class="ch-line ch-line--a" d="M0.4 841.5L5.9 832.3L11.7 832.3L17.4 823.1L23.2 841.5L24.6 841.5L27.4 832.3L30.3 813.8L33.2 813.8L36.0 795.4L39.0 795.4L40.3 786.2L43.3 767.7L46.1 758.5L54.9 740.0L57.6 740.0L65.0 740.0L66.2 740.0L73.5 786.2L74.7 786.2L84.9 813.8L96.4 823.1L107.9 813.8L116.5 823.1L125.0 813.8L133.7 813.8L142.3 823.1L150.9 813.8L159.4 813.8L169.5 823.1L176.5 795.4L185.3 656.9L186.6 629.2L193.9 435.4L195.2 407.7L202.5 241.5L203.8 232.3L211.1 121.5L212.4 121.5L219.7 176.9L221.0 195.4L228.3 361.5L229.5 389.2L236.8 555.4L238.1 592.3L239.6 610.8L246.7 786.2L248.3 795.4L259.8 795.4L271.3 813.8L279.9 813.8L288.4 813.8L297.1 813.8L305.7 813.8L314.3 813.8L324.2 823.1L335.7 832.3L341.2 804.6L347.2 758.5L349.9 693.8L357.2 518.5L358.5 490.8L365.8 306.2L367.1 287.7L374.4 121.5L383.0 140.0L384.3 149.2L391.6 278.5L392.9 306.2L400.2 472.3L401.4 500.0L405.8 601.5L408.8 620.0L410.0 638.5L417.4 795.4L426.0 804.6L434.6 813.8L443.2 813.8L451.8 813.8L460.4 813.8L469.0 813.8L477.6 813.8L486.1 804.6L494.7 813.8L503.3 823.1L504.7 813.8L511.9 776.9L513.3 758.5L520.5 610.8L521.9 555.4L529.1 380.0L530.5 333.8L537.7 195.4L539.1 195.4L547.7 149.2L549.2 149.2L556.3 241.5L560.7 333.8L564.9 444.6L572.0 601.5L580.6 786.2L589.2 795.4L597.9 813.8L606.5 804.6L615.1 795.4L623.7 813.8L632.3 813.8L640.9 813.8L649.4 813.8L658.1 813.8L668.0 823.1L679.6 758.5L685.1 666.2L691.0 518.5L693.7 444.6L701.1 260.0L702.3 241.5L709.7 130.8L710.9 121.5L718.3 158.5L719.5 167.7L726.9 315.4L728.1 343.1L735.4 509.2L736.7 555.4L745.3 758.5L746.8 786.2L756.8 795.4L768.4 823.1L778.4 804.6L787.0 804.6L795.6 813.8L804.2 813.8L812.8 813.8L821.3 813.8L830.0 823.1L835.7 832.3L839.8 804.6L845.7 776.9L848.5 721.5L855.8 573.8L857.1 546.2L864.4 389.2L865.7 352.3L873.0 223.1L881.6 241.5L882.8 241.5L890.2 352.3L891.4 370.8L898.7 518.5L900.0 555.4L904.3 583.1L908.6 712.3L910.1 786.2L918.7 795.4L928.8 804.6L940.2 813.8L950.2 813.8L958.8 823.1L970.3 823.1L978.9 823.1L986.0 823.1L991.6 832.3L997.3 823.1"/><path class="ch-line ch-line--a" d="M4.5 841.5L10.2 850.8L16.0 841.5L21.7 850.8L23.1 850.8L26.0 850.8L28.9 832.3L31.8 850.8L34.6 841.5L37.5 804.6L40.4 804.6L43.2 786.2L52.1 740.0L62.1 749.2L63.4 749.2L70.6 740.0L72.0 740.0L77.6 804.6L82.1 813.8L93.5 832.3L105.1 832.3L115.1 832.3L123.6 823.1L130.9 823.1L140.9 823.1L149.5 823.1L158.1 823.1L166.7 823.1L173.7 823.1L175.1 832.3L182.4 776.9L183.8 740.0L191.0 536.9L192.4 500.0L199.6 324.6L201.0 269.2L208.2 140.0L216.8 149.2L218.2 158.5L225.4 296.9L226.8 324.6L234.0 509.2L235.3 527.7L243.9 721.5L245.5 786.2L256.8 813.8L268.4 823.1L278.4 823.1L287.0 823.1L295.6 823.1L304.2 823.1L312.8 823.1L321.3 832.3L332.8 832.3L338.4 823.1L344.3 823.1L347.1 804.6L354.3 638.5L355.7 601.5L362.9 407.7L364.3 380.0L371.6 204.6L372.9 130.8L380.1 130.8L381.5 130.8L388.7 213.8L390.1 250.8L397.3 416.9L398.7 453.8L407.4 629.2L415.9 804.6L423.0 813.8L433.1 823.1L441.7 823.1L450.3 832.3L458.9 823.1L467.6 823.1L476.1 832.3L484.6 823.1L493.2 823.1L501.9 832.3L509.1 823.1L517.7 730.8L518.9 703.1L526.3 490.8L527.5 463.1L534.9 296.9L536.1 250.8L544.7 158.5L546.3 158.5L553.3 195.4L557.8 278.5L561.9 380.0L569.2 546.2L570.5 564.6L577.8 730.8L579.1 776.9L587.9 813.8L596.5 832.3L605.1 823.1L613.7 832.3L622.2 832.3L629.4 832.3L639.5 832.3L648.1 823.1L656.7 823.1L665.2 823.1L673.6 823.1L676.7 832.3L682.3 776.9L688.2 620.0L690.9 546.2L698.2 333.8L699.5 296.9L706.8 186.2L708.1 140.0L715.4 140.0L716.7 140.0L724.0 260.0L725.3 296.9L732.6 490.8L733.8 509.2L742.4 666.2L744.0 721.5L754.1 813.8L765.5 832.3L777.0 832.3L785.6 832.3L794.2 832.3L802.8 823.1L811.4 823.1L819.9 823.1L828.5 823.1L834.3 823.1L842.9 823.1L845.6 813.8L852.9 684.6L854.2 656.9L861.5 463.1L862.8 435.4L870.0 296.9L871.4 250.8L878.7 223.1L880.0 223.1L887.3 296.9L888.6 324.6L895.7 472.3L897.1 490.8L903.0 601.5L905.8 647.7L907.3 666.2L917.3 813.8L926.0 823.1L937.4 823.1L948.9 823.1L956.1 823.1L967.4 832.3L976.0 823.1L984.5 823.1L990.3 823.1L995.8 823.1"/><path class="ch-line ch-line--b" d="M1.6 878.5L7.3 878.5L13.1 878.5L18.8 878.5L26.2 878.5L34.8 869.2L46.2 878.5L57.8 878.5L67.8 869.2L76.3 869.2L87.9 869.2L93.4 878.5L97.8 860.0L99.2 841.5L102.0 795.4L109.4 675.4L110.6 647.7L118.0 490.8L119.2 463.1L126.6 250.8L135.2 306.2L136.4 324.6L143.8 453.8L145.0 472.3L152.3 656.9L153.5 693.8L160.9 813.8L162.2 850.8L171.0 869.2L178.1 869.2L188.2 869.2L196.8 860.0L205.3 860.0L214.0 860.0L222.6 860.0L231.2 860.0L239.8 869.2L251.1 878.5L256.7 869.2L262.7 850.8L265.4 804.6L272.7 656.9L274.0 620.0L281.3 398.5L282.6 389.2L289.9 176.9L291.2 140.0L298.5 158.5L299.7 176.9L307.1 306.2L308.4 343.1L315.7 555.4L316.9 601.5L325.5 795.4L327.1 850.8L338.6 869.2L350.0 860.0L360.1 860.0L368.7 860.0L377.3 860.0L385.9 860.0L394.5 860.0L403.0 860.0L411.6 869.2L418.8 878.5L428.8 850.8L436.0 740.0L437.3 721.5L444.6 509.2L445.9 481.5L453.2 296.9L454.5 278.5L461.8 213.8L463.1 213.8L470.4 269.2L471.7 287.7L479.0 472.3L480.3 500.0L487.5 693.8L496.2 860.0L506.1 869.2L514.8 878.5L523.4 869.2L532.0 869.2L540.5 869.2L552.1 869.2L563.5 887.7L573.6 869.2L583.6 878.5L590.7 878.5L592.0 878.5L599.3 795.4L600.7 795.4L607.9 592.3L609.3 546.2L616.5 352.3L617.9 315.4L625.1 149.2L633.7 195.4L635.1 213.8L642.3 389.2L643.7 407.7L650.9 610.8L652.2 629.2L659.5 767.7L660.8 804.6L671.0 869.2L682.4 869.2L693.9 869.2L703.9 860.0L712.5 860.0L721.1 860.0L729.7 860.0L738.2 869.2L749.7 869.2L755.3 869.2L759.8 860.0L763.9 823.1L771.3 675.4L772.5 647.7L779.9 435.4L781.1 398.5L788.4 250.8L789.7 223.1L797.1 149.2L798.3 176.9L805.7 278.5L806.9 306.2L814.3 518.5L815.5 555.4L824.2 740.0L831.4 869.2L837.1 869.2L848.6 869.2L858.6 869.2L867.2 860.0L875.8 860.0L884.4 860.0L893.0 860.0L901.5 869.2L913.0 869.2L921.7 869.2L922.9 869.2L927.3 869.2L931.7 860.0L935.9 850.8L943.2 795.4L944.4 776.9L951.8 721.5L957.3 730.8L961.6 740.0L963.0 749.2L967.3 758.5L970.2 776.9L973.0 786.2L975.9 804.6L978.7 850.8L981.6 860.0L987.2 869.2L993.0 869.2L998.8 869.2"/><path class="ch-line ch-line--b" d="M3.0 878.5L8.9 878.5L14.5 878.5L20.3 878.5L29.0 878.5L37.6 878.5L49.2 878.5L60.6 878.5L69.3 878.5L79.2 878.5L89.1 878.5L90.7 878.5L96.2 869.2L99.1 841.5L102.2 795.4L105.0 740.0L112.2 620.0L113.6 583.1L120.8 435.4L122.2 407.7L128.0 278.5L130.8 278.5L138.0 324.6L139.4 343.1L146.6 518.5L148.0 536.9L155.1 721.5L156.6 721.5L163.7 878.5L172.3 878.5L181.0 878.5L189.6 878.5L198.2 878.5L206.8 860.0L215.4 860.0L224.0 869.2L232.6 869.2L242.5 878.5L254.1 878.5L259.6 860.0L265.5 786.2L268.2 730.8L275.6 583.1L276.8 536.9L284.2 343.1L285.4 333.8L292.8 149.2L294.0 149.2L301.4 204.6L302.6 213.8L310.0 389.2L311.2 416.9L318.5 610.8L319.8 638.5L322.7 721.5L328.3 878.5L330.0 878.5L341.4 878.5L352.9 878.5L361.5 878.5L370.0 869.2L378.7 869.2L387.3 860.0L395.9 860.0L404.4 860.0L413.1 869.2L420.2 878.5L422.9 878.5L430.3 832.3L431.6 804.6L438.9 656.9L440.2 629.2L447.5 407.7L448.7 380.0L456.1 241.5L457.3 232.3L464.7 195.4L465.9 232.3L473.3 315.4L474.5 343.1L481.9 546.2L483.1 583.1L488.9 721.5L490.4 740.0L491.7 767.7L499.0 878.5L507.6 878.5L516.2 878.5L524.8 869.2L533.4 869.2L543.5 869.2L554.9 869.2L566.4 869.2L575.0 869.2L586.4 878.5L593.6 860.0L602.2 721.5L603.5 712.3L610.8 509.2L612.1 472.3L619.4 278.5L620.7 269.2L626.6 149.2L629.3 158.5L636.6 232.3L637.9 241.5L645.2 426.2L646.5 463.1L653.7 675.4L655.0 712.3L662.4 860.0L663.6 878.5L673.7 878.5L685.3 878.5L696.8 878.5L705.3 878.5L714.0 860.0L722.6 860.0L731.2 860.0L741.2 869.2L752.6 878.5L758.2 869.2L762.7 841.5L766.9 786.2L774.1 620.0L775.5 583.1L782.7 380.0L784.1 333.8L791.3 149.2L799.9 176.9L801.3 186.2L808.5 343.1L809.8 389.2L817.1 583.1L818.4 610.8L825.7 786.2L827.0 850.8L832.8 878.5L839.9 878.5L851.5 878.5L860.1 869.2L868.7 869.2L877.3 860.0L885.9 869.2L894.5 860.0L904.4 869.2L915.9 878.5L924.4 878.5L930.2 869.2L934.6 850.8L938.8 832.3L946.0 730.8L947.2 730.8L953.0 730.8L955.9 730.8L960.1 740.0L964.6 749.2L965.8 758.5L968.8 776.9L971.6 786.2L974.4 804.6L977.4 841.5L980.1 869.2L983.0 878.5L988.7 869.2L994.6 878.5"/><line class="ch-cross" x1="0" x2="0" y1="0" y2="1000"/></svg></div><div class="ch-x" aria-hidden="true"><span style="left:0%" class="is-first">0 s</span><span style="left:35.82%">10 s</span><span style="left:71.63%">20 s</span></div></div><!--/CHART:trot-->
+              <span class="ch-tip" aria-hidden="true"></span>
+            </div>
+            <!--TABLE:trot--><table class="sr-only"><caption>Knee lifts in the 19:10 trot, seconds after the start</caption><tbody><tr><th scope="row">Front left and rear right</th><td>5.9, 10.4, 15.3, 19.8, 24.5</td></tr><tr><th scope="row">Front right and rear left</th><td>3.6, 8.2, 12.9, 17.5, 22.2</td></tr></tbody></table><!--/TABLE:trot-->
+          </div>
+        </article>
+        <article class="card card--row card--open span-4 m-nolift" id="watchdog">
+          <h3>Goes limp outside 9.5 to 13.0&nbsp;V</h3>
+          <p>Also at 60&nbsp;°C or when a servo stops answering. A 45°/s trot stopped itself 5&nbsp;s in.</p>
+          <div class="panel">
+            <div class="chart" data-chart-host>
+              <!--CHART:watch--><div class="ch" role="img" aria-label="Servo voltage readings in the 45 degrees per second trot: they stay under the 13.0 V limit until one reading of 13.02 V, 5.0 s in, which stops the walk." data-chart='{"span":5.5,"unit":" V","names":["Reading"],"pts":[[0.02,12.72],[0.05,12.72],[0.09,12.67],[0.14,12.62],[0.17,12.69],[0.22,12.64],[0.25,12.67],[0.29,12.61],[0.33,12.73],[0.38,12.71],[0.41,12.68],[0.45,12.62],[0.5,12.69],[0.53,12.68],[0.57,12.68],[0.62,12.61],[0.66,12.75],[0.69,12.72],[0.74,12.69],[0.78,12.6],[0.81,12.69],[0.86,12.65],[0.89,12.65],[0.94,12.55],[0.98,12.72],[1.01,12.68],[1.06,12.67],[1.1,12.6],[1.14,12.69],[1.18,12.63],[1.22,12.37],[1.26,12.55],[1.3,12.7],[1.34,12.69],[1.37,12.6],[1.42,12.45],[1.46,12.59],[1.49,12.62],[1.54,12.6],[1.58,12.6],[1.62,12.72],[1.66,12.68],[1.7,12.63],[1.74,12.61],[1.78,12.66],[1.82,12.62],[1.86,12.58],[1.9,12.59],[1.94,12.69],[1.98,12.49],[2.02,12.68],[2.06,12.58],[2.1,12.31],[2.14,12.6],[2.18,12.01],[2.22,11.98],[2.26,12.6],[2.3,12.44],[2.34,12.6],[2.38,12.55],[2.42,12.64],[2.46,12.61],[2.5,12.6],[2.54,12.59],[2.58,12.68],[2.62,12.64],[2.66,12.58],[2.7,12.57],[2.74,12.59],[2.78,12.59],[2.82,12.63],[2.86,12.55],[2.9,12.65],[2.94,12.76],[2.98,12.63],[3.02,12.57],[3.06,12.46],[3.1,12.61],[3.14,12.62],[3.18,12.59],[3.22,12.75],[3.26,12.67],[3.3,12.64],[3.34,12.6],[3.38,12.66],[3.42,12.64],[3.46,12.52],[3.5,12.38],[3.54,12.71],[3.58,12.01],[3.62,12.61],[3.66,12.58],[3.7,12.62],[3.74,12.6],[3.78,12.63],[3.82,12.32],[3.86,12.34],[3.9,12.69],[3.94,12.67],[3.98,12.46],[4.02,12.64],[4.06,12.6],[4.1,12.55],[4.14,12.45],[4.18,12.63],[4.22,12.5],[4.26,12.59],[4.3,12.01],[4.34,12.49],[4.38,12.49],[4.42,12.59],[4.46,12.54],[4.5,12.66],[4.54,12.67],[4.58,12.61],[4.62,12.57],[4.66,12.66],[4.7,12.63],[4.74,12.46],[4.78,12.55],[4.82,12.68],[4.86,12.69],[4.9,12.65],[4.94,12.5],[4.98,12.63],[5.02,13.02]]}'><div class="ch-y" aria-hidden="true"><span style="top:86.67%">12.0</span><span style="top:53.33%">12.5</span><span style="top:20%">13.0</span></div><div class="ch-plot"><svg viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true"><line class="ch-grid" x1="0" x2="1000" y1="866.7" y2="866.7"/><line class="ch-grid" x1="0" x2="1000" y1="533.3" y2="533.3"/><line class="ch-grid" x1="0" x2="1000" y1="200.0" y2="200.0"/><line class="ch-limit" x1="0" x2="1000" y1="200.0" y2="200.0"/><path class="ch-line ch-line--a ch-line--thin" d="M3.5 387.3L9.6 387.3L16.7 422.7L24.7 453.3L31.3 409.3L39.3 442.0L46.2 419.3L53.5 459.3L60.7 382.7L68.7 396.0L75.3 415.3L82.5 450.7L90.2 409.3L97.1 415.3L104.4 412.0L112.2 460.7L119.3 368.0L126.4 387.3L133.8 408.0L141.3 465.3L148.0 409.3L156.4 430.0L162.5 431.3L170.2 496.7L178.0 387.3L184.4 410.7L192.4 419.3L199.8 468.7L206.7 409.3L214.0 444.7L221.6 619.3L228.7 498.0L236.0 403.3L243.5 408.0L249.8 465.3L257.5 564.7L264.7 471.3L271.6 452.0L279.3 466.7L286.9 468.7L293.8 387.3L301.6 414.0L308.4 448.0L315.8 462.7L323.1 424.0L330.0 450.7L337.6 477.3L345.5 474.0L352.2 406.0L359.5 539.3L367.1 412.0L374.0 482.0L381.5 659.3L388.9 465.3L396.0 860.0L403.1 880.7L410.7 465.3L417.8 576.0L424.7 464.0L432.5 500.7L439.6 442.0L446.7 458.0L454.4 465.3L461.3 476.0L468.5 410.7L476.2 442.0L483.1 480.0L490.5 489.3L498.0 472.7L504.9 472.7L512.2 443.3L519.6 496.7L526.5 434.7L534.2 357.3L541.6 446.0L548.4 483.3L555.5 558.7L563.5 460.7L570.2 456.7L577.6 476.0L585.3 368.0L592.0 422.7L599.5 440.0L607.1 466.7L614.0 425.3L621.3 437.3L628.9 517.3L635.8 613.3L643.1 394.7L650.7 863.3L657.6 459.3L664.9 482.0L672.5 450.7L679.6 468.7L686.7 443.3L694.4 654.7L701.3 642.7L708.5 409.3L716.4 422.7L723.1 558.7L730.4 442.0L738.0 465.3L744.9 498.0L752.4 566.0L759.8 443.3L766.9 533.3L774.2 474.0L781.6 858.7L788.7 542.0L796.0 538.0L803.1 472.7L810.5 504.0L817.6 425.3L824.9 422.7L832.0 460.7L839.5 483.3L846.9 424.0L854.0 443.3L861.6 561.3L868.4 496.7L875.5 415.3L883.5 409.3L890.4 432.7L897.6 530.7L905.3 449.3L912.4 187.3"/><line class="ch-cross" x1="0" x2="0" y1="0" y2="1000"/></svg><span class="ch-note" style="left:1%;top:20%">Limit 13.0 V</span><span class="ch-trip" style="left:91.24%;top:18.73%"></span><span class="ch-note ch-note--end" style="left:91.24%;top:18.73%">13.02 V: stop</span></div><div class="ch-x" aria-hidden="true"><span style="left:0%" class="is-first">0 s</span><span style="left:18.18%">1 s</span><span style="left:36.36%">2 s</span><span style="left:54.55%">3 s</span><span style="left:72.73%">4 s</span><span style="left:90.91%">5 s</span></div></div><!--/CHART:watch-->
+              <span class="ch-tip" aria-hidden="true"></span>
+            </div>
+            <!--TABLE:watch--><table class="sr-only"><caption>Servo voltage readings in the 19:13 trot at 45° per second</caption><tbody><tr><th scope="row">Readings before the stop</th><td>125, from 11.98 to 12.76 V</td></tr><tr><th scope="row">The stop</th><td>13.02 V at 5.0 s, over the 13.0 V limit</td></tr></tbody></table><!--/TABLE:watch-->
+          </div>
+        </article>
+        <article class="card card--row card--open span-4 m-nolift" id="shutdown">
+          <h3>Parks and goes limp in 2.1&nbsp;s</h3>
+          <p>Then it waits for the battery to come out before it powers the Pi off.</p>
+          <div class="panel">
+            <div class="shut-log" role="img" aria-label="The 17:31 shutdown log: last readings of all eight servos at 0.09 seconds, knees parked at 1.08, hips parked at 2.04, every servo limp at 2.12, and the battery out, reading 3.96 volts, at 58.7 seconds">
+              <div class="shut-log__head"><code>robot.py shutdown</code><span>17:31</span></div>
+              <ol class="shut-log__list">
+                <li><span>Last readings, 8 servos</span><span>0.09&nbsp;s</span></li>
+                <li><span>Knees parked</span><span>1.08&nbsp;s</span></li>
+                <li><span>Hips parked</span><span>2.04&nbsp;s</span></li>
+                <li><span>Every servo limp</span><span>2.12&nbsp;s</span></li>
+                <li><span>Battery out, 3.96&nbsp;V</span><span>58.7&nbsp;s</span></li>
+              </ol>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer closing g2m" id="contact" aria-labelledby="close-h">
+  <div class="wrap">
+    <div class="closing__cta close--word">
+      <div class="section-head--split">
+        <div><h2 id="close-h">See the robot trot on its own power</h2><p class="t-lead">The untethered run, filmed from above on 11 November 2026 at 19:10.</p></div>
+        <a class="btn btn--primary" href="#film">Watch JD walk<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+      </div>
+      <p class="close__word" aria-hidden="true">Jumping Daniel</p>
+    </div>
+    <div class="closing__links">
+      <div class="grid">
+        <div class="span-4 stack-4">
+          <a class="nav__logo" href="#top"><span class="mark" data-mark="dots" aria-hidden="true"></span>Jumping Daniel</a>
+          <p class="footer__lede">A four-legged robot that trots.</p>
+        </div>
+        <div class="span-2 footer__col"><h3>Trot</h3><ul><li><a href="#walks">Two views</a></li><li><a href="#untethered">No cable</a></li><li><a href="#numbers">Numbers</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Parts</h3><ul><li><a href="#build">Parts</a></li><li><a href="#cad">CAD</a></li><li><a href="#wiring">How it is wired</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Code</h3><ul><li><a href="#trot">Trot gait</a></li><li><a href="#watchdog">Watchdog</a></li><li><a href="#shutdown">Shutdown</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Elsewhere</h3><ul><li><a href="https://github.com/BaneBeetle">GitHub</a></li></ul></div>
+      </div>
+      <div class="footer__legal">
+        <span>&copy; 2026 Brian Phan · MECE 4611 Robotics Studio · Fall 2026 · Group 43</span>
+        <span>Product names and logos are trademarks of their owners</span>
+        <div class="socials"></div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<nav class="actionbar" aria-label="Quick actions">
+  <a class="btn btn--primary" href="#film">Watch JD walk</a>
+</nav>
+
+<script type="module" src="assets/system.js"></script>
+<script type="module" src="assets/motion/motion.js"></script>
+<script type="module" src="assets/layout/layout.js"></script>
+<script type="module" src="assets/diagrams/mount.js"></script>
+<script>
+  // The hero film rests on its poster under reduced motion; the main action plays it.
+  (function () {
+    var film = document.querySelector('#film video');
+    if (!film) return;
+    var still = window.matchMedia('(prefers-reduced-motion: reduce)');
+    if (still.matches) { film.removeAttribute('autoplay'); film.pause(); }
+    document.querySelectorAll('a[href="#film"]').forEach(function (a) {
+      a.addEventListener('click', function () { film.play().catch(function () {}); });
+    });
+  })();
+  // The log charts: a crosshair and the value under the pointer.
+  (function () {
+    document.querySelectorAll('[data-chart-host]').forEach(function (host) {
+      var ch = host.querySelector('.ch[data-chart]'), plot = host.querySelector('.ch-plot'), tip = host.querySelector('.ch-tip');
+      if (!ch || !plot || !tip) return;
+      var d = JSON.parse(ch.getAttribute('data-chart')), cross = plot.querySelector('.ch-cross');
+      function show(ev) {
+        var r = plot.getBoundingClientRect(), f = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+        var t = f * d.span, best = d.pts[0];
+        d.pts.forEach(function (p) { if (Math.abs(p[0] - t) < Math.abs(best[0] - t)) best = p; });
+        var bx = best[0] / d.span * 1000;
+        cross.setAttribute('x1', bx); cross.setAttribute('x2', bx);
+        var parts = [best[0].toFixed(1) + ' s'];
+        for (var i = 1; i < best.length; i++) parts.push((d.names.length > 1 ? d.names[i - 1] + ': ' : '') + best[i] + d.unit);
+        tip.textContent = parts.join(' · ');
+        var hr = host.getBoundingClientRect(), px = r.left - hr.left + bx / 1000 * r.width;
+        tip.style.left = Math.max(0, Math.min(hr.width - tip.offsetWidth, px - tip.offsetWidth / 2)) + 'px';
+        host.classList.add('is-hover');
+      }
+      plot.addEventListener('pointermove', show);
+      plot.addEventListener('pointerleave', function () { host.classList.remove('is-hover'); });
+    });
+  })();
+</script>
+</body>
+</html>
